@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    environment {
+        DOCKERHUB_USERNAME = 'akhilkumar119'
+    }
     stages {
         stage('Stage 1 Checkout') {
             steps {
@@ -10,7 +13,7 @@ pipeline {
             steps {
                 script {
                     dir('NodeApp') {
-                        sh 'docker build -t akhilkumar119/node-app:latest .'
+                        sh "docker build -t ${DOCKERHUB_USERNAME}/node-app:latest ."
                     }
                 }
             }
@@ -19,9 +22,29 @@ pipeline {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'dockerhubcreds', passwordVariable: 'DOCKERHUB_PASSWORD', usernameVariable: 'DOCKERHUB_USERNAME')]) {
-                        sh "echo ${DOCKERHUB_PASSWORD} | docker login -u \${DOCKERHUB_USERNAME} --password-stdin"
+                        sh "echo \$DOCKERHUB_PASSWORD | docker login -u \$DOCKERHUB_USERNAME --password-stdin"
                         sh "docker push ${DOCKERHUB_USERNAME}/node-app:latest"
                     }
+                }
+            }
+        }
+        stage('Stage 4 Pull Image from Dockerhub'){
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhubcreds', passwordVariable: 'DOCKERHUB_PASSWORD', usernameVariable: 'DOCKERHUB_USERNAME')]) {
+                        sh "echo \$DOCKERHUB_PASSWORD | docker login -u \$DOCKERHUB_USERNAME --password-stdin"
+                        sh "docker pull ${DOCKERHUB_USERNAME}/node-app:latest"
+                    }
+                }
+            }
+        }
+        stage('Stage 5 Run the container'){
+            steps {
+                script {
+                    // Stop and remove the old container to prevent port conflicts
+                    sh "docker stop node-app-container || true"
+                    sh "docker rm node-app-container || true"
+                    sh "docker run -d -p 3000:3000 --name node-app-container ${DOCKERHUB_USERNAME}/node-app:latest"
                 }
             }
         }
