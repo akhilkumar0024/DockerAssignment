@@ -1,0 +1,27 @@
+services:
+  node-app:
+    build: ./NodeApp
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=MySQL-DB
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_USER_PASSWORD}
+      - DB_NAME=${DB_NAME}
+    depends_on:
+      - MySQL-DB
+  MySQL-DB:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${ROOT_DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_USER_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+volumes:
+  mysql-data:
